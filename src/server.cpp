@@ -87,38 +87,49 @@ request_stream >> method >> path >> version;
     }
   
     // Handle /user-agent request
-    // Handle /user-agent request
-  if (method == "GET" && path == "/user-agent") {
-    string user_agent = headers["User-Agent"];
-    stringstream response;
-    response << "HTTP/1.1 200 OK\r\n";
-    response << "Content-Type: text/plain\r\n";
-    response << "Content-Length: " << user_agent.length() << "\r\n";
-    response << "\r\n";
-    response << user_agent;
-
-    string response_str = response.str();
-    send(client, response_str.c_str(), response_str.length(), 0);
-  }
-  // Handle /echo/{str} request
-  else if (method == "GET" && path.find("/echo/") == 0) {
-    // Extract the string after /echo/
-    string echo_string = path.substr(6); // skip the "/echo/"
-    
-    stringstream response;
-    response << "HTTP/1.1 200 OK\r\n";
-    response << "Content-Type: text/plain\r\n";
-    response << "Content-Length: " << echo_string.length() << "\r\n";
-    response << "\r\n";
-    response << echo_string;
-
-    string response_str = response.str();
-    send(client, response_str.c_str(), response_str.length(), 0);
-  }
-  else {
-    const char* not_found = "HTTP/1.1 404 Not Found\r\n\r\n";
-    send(client, not_found, strlen(not_found), 0);
-  }
+    if (method == "GET" && path == "/user-agent") {
+      string user_agent = headers["User-Agent"];
+      stringstream response;
+      response << "HTTP/1.1 200 OK\r\n";
+      response << "Content-Type: text/plain\r\n";
+      response << "Content-Length: " << user_agent.length() << "\r\n";
+      response << "\r\n";
+      response << user_agent;
+  
+      string response_str = response.str();
+      send(client, response_str.c_str(), response_str.length(), 0);
+    }
+    // Handle /echo/{str} request
+    else if (method == "GET" && path.find("/echo/") == 0) {
+      // Extract the string after /echo/
+      string echo_string = path.substr(6); // skip the "/echo/"
+      
+      stringstream response;
+      response << "HTTP/1.1 200 OK\r\n";
+      response << "Content-Type: text/plain\r\n";
+      response << "Content-Length: " << echo_string.length() << "\r\n";
+      response << "\r\n";
+      response << echo_string;
+  
+      string response_str = response.str();
+      send(client, response_str.c_str(), response_str.length(), 0);
+    }
+    // Handle root path request
+    else if (method == "GET" && path == "/") {
+      stringstream response;
+      response << "HTTP/1.1 200 OK\r\n";
+      response << "Content-Type: text/plain\r\n";
+      response << "Content-Length: 12\r\n";
+      response << "\r\n";
+      response << "Hello, World!";
+  
+      string response_str = response.str();
+      send(client, response_str.c_str(), response_str.length(), 0);
+    }
+    else {
+      const char* not_found = "HTTP/1.1 404 Not Found\r\n\r\n";
+      send(client, not_found, strlen(not_found), 0);
+    }
 
   
 

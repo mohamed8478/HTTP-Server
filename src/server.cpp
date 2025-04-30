@@ -64,15 +64,26 @@ std::string method, path, version;
 request_stream >> method >> path >> version;
 
 // Decide response based on path
-const char* http_response;
+    // Check if it's a GET /echo/{str} request
+    std::string prefix = "/echo/";
+    if (method == "GET" && path.rfind(prefix, 0) == 0) {
+      std::string echoed_str = path.substr(prefix.length());
 
-if (path == "/") {
-  http_response = "HTTP/1.1 200 OK\r\n\r\n";
-} else {
-  http_response = "HTTP/1.1 404 Not Found\r\n\r\n";
-}
+      std::string response_body = echoed_str;
+      std::ostringstream response;
+      response << "HTTP/1.1 200 OK\r\n";
+      response << "Content-Type: text/plain\r\n";
+      response << "Content-Length: " << response_body.length() << "\r\n";
+      response << "\r\n";
+      response << response_body;
 
-send(client, http_response, strlen(http_response), 0);
+      std::string response_str = response.str();
+      send(client, response_str.c_str(), response_str.length(), 0);
+    } else {
+      const char* not_found = "HTTP/1.1 404 Not Found\r\n\r\n";
+      send(client, not_found, strlen(not_found), 0);
+    }
+
 
 
   close(server_fd);

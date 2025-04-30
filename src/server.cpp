@@ -52,9 +52,27 @@ int main(int argc, char **argv) {
   int client = accept(server_fd, (struct sockaddr *) &client_addr, (socklen_t *) &client_addr_len);
   std::cout << "Client connected\n";
   
-  const char* http_response ="HTTP/1.1 200 OK\r\n\r\n";
+  // After "Client connected"
+char buffer[4096] = {0};
+recv(client, buffer, sizeof(buffer) - 1, 0);
 
-  send(client, http_response, strlen(http_response), 0);
+// Extract the request line
+std::string request(buffer);
+std::istringstream request_stream(request);
+std::string method, path, version;
+request_stream >> method >> path >> version;
+
+// Decide response based on path
+const char* http_response;
+
+if (path == "/") {
+  http_response = "HTTP/1.1 200 OK\r\n\r\n";
+} else {
+  http_response = "HTTP/1.1 404 Not Found\r\n\r\n";
+}
+
+send(client, http_response, strlen(http_response), 0);
+
 
   close(server_fd);
 

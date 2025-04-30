@@ -8,6 +8,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <sstream>
+#include <map>
 using namespace std;
 
 int main(int argc, char **argv) {
@@ -53,33 +54,42 @@ int main(int argc, char **argv) {
   int client = accept(server_fd, (struct sockaddr *) &client_addr, (socklen_t *) &client_addr_len);
   std::cout << "Client connected\n";
   
-  // After "Client connected"
-char buffer[4096] = {0};
-recv(client, buffer, sizeof(buffer) - 1, 0);
+  // Declare the headers map
+  map<string, string> headers;
 
-// Extract the request line
-std::string request(buffer);
-std::istringstream request_stream(request);
-std::string method, path, version;
-request_stream >> method >> path >> version;
+  // Extract headers
+  size_t header_start = request.find("\r\n") + 2;
+  size_t header_end = request.find("\r\n\r\n");
 
-// Decide response based on path
-    // Check if it's a GET /echo/{str} request
-    if (method == "GET" && path == "/user-agent") {
-      string user_agent = headers["User-Agent"];
-      stringstream response;
-      response << "HTTP/1.1 200 OK\r\n";
-      response << "Content-Type: text/plain\r\n";
-      response << "Content-Length: " << user_agent.length() << "\r\n";
-      response << "\r\n";
-      response << user_agent;
+  string header_str = request.substr(header_start, header_end - header_start);
 
-      string response_str = response.str();
-      send(client, response_str.c_str(), response_str.length(), 0);
+  stringstream ss(header_str);
+  string header_line;
+  while (getline(ss, header_line)) {
+    size_t colon_pos = header_line.find(": ");
+    if (colon_pos != string::npos) {
+      string header_name = header_line.substr(0, colon_pos);
+      string header_value = header_line.substr(colon_pos + 2);
+      headers[header_name] = header_value;
+    }
+  }
+
+  // Handle /user-agent request
+  if (method == "GET" && path == "/user-agent") {
+    string user_agent = headers["User-Agent"];
+    stringstream response;
+    response << "HTTP/1.1 200 OK\r\n";
+    response << "Content-Type: text/plain\r\n";
+    response << "Content-Length: " << user_agent.length() << "\r\n";
+    response << "\r\n";
+    response << user_agent;
+
+    string response_str = response.str();
+    send(client, response_str.c_str(), response_str.length(), 0);
   }
   else {
-      const char* not_found = "HTTP/1.1 404 Not Found\r\n\r\n";
-      send(client, not_found, strlen(not_found), 0);
+    const char* not_found = "HTTP/1.1 404 Not Found\r\n\r\n";
+    send(client, not_found, strlen(not_found), 0);
   }
 
 
